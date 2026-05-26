@@ -1,4 +1,4 @@
-# Doctor App — Django REST Framework Conceptos - TESTING 4
+# Doctor App — Django REST Framework Conceptos
 
 Proyecto de gestión de citas médicas que implementa los siguientes conceptos de **Django REST Framework (DRF)**:
 
@@ -296,3 +296,8 @@ self.client.force_authenticate(user=self.doctor_user)
 ```
 
 **Archivo:** `doctors/tests.py:5-558`
+
+## 13. Secretos
+```
+OPENAI_API_KEY="sk_asdfadfa-asdfasdfasdfa-asdfadfadfa"
+```
