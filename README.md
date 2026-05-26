@@ -300,4 +300,5 @@ self.client.force_authenticate(user=self.doctor_user)
 ## 13. Secretos
 ```
 OPENAI_API_KEY="sk_asdfadfa-asdfasdfasdfa-asdfadfadfa"
+APP_SECRET="secret123"
 ```
