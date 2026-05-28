@@ -28,3 +28,14 @@ class MedicalNote(models.Model):
     doctor = models.ForeignKey(Doctor, related_name='medical_notes', on_delete=models.CASCADE)
     note = models.TextField()
     date = models.DateField()
+
+
+class DoctorReview(models.Model):
+    doctor = models.ForeignKey(Doctor, related_name='reviews', on_delete=models.CASCADE)
+    patient = models.ForeignKey('patients.Patient', related_name='doctor_reviews', on_delete=models.CASCADE)
+    rating = models.IntegerField()
+    comment = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['doctor', 'patient']

@@ -7,10 +7,11 @@ from doctors.permissions import IsDoctor
 from doctors.serializers import (
     DepartmentSerializer,
     DoctorAvailabilitySerializer,
+    DoctorReviewSerializer,
     DoctorSerializer,
     MedicalNoteSerializer,
 )
-from doctors.models import Department, Doctor, DoctorAvailability, MedicalNote
+from doctors.models import Department, Doctor, DoctorAvailability, DoctorReview, MedicalNote
 from bookings.models import Appointment
 
 
@@ -64,3 +65,8 @@ class DoctorAvailabilityViewSet(viewsets.ModelViewSet):
 class MedicalNoteViewSet(viewsets.ModelViewSet):
     serializer_class = MedicalNoteSerializer
     queryset = MedicalNote.objects.all()
+
+
+class DoctorReviewViewSet(viewsets.ModelViewSet):
+    serializer_class = DoctorReviewSerializer
+    queryset = DoctorReview.objects.all()

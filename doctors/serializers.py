@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from doctors.models import Department, Doctor, DoctorAvailability, MedicalNote
+from doctors.models import Department, Doctor, DoctorAvailability, DoctorReview, MedicalNote
 
 class DoctorSerializer(serializers.ModelSerializer):
     class Meta:
@@ -33,3 +33,14 @@ class MedicalNoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = MedicalNote
         fields = "__all__"
+
+
+class DoctorReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DoctorReview
+        fields = "__all__"
+
+    def validate_rating(self, value):
+        if value < 1 or value > 5:
+            raise serializers.ValidationError("Rating must be between 1 and 5")
+        return value
