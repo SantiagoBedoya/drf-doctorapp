@@ -10,6 +10,8 @@ from patients.models import Insurance, MedicalRecord, Patient
 
 
 class PatientFilter(django_filters.FilterSet):
+    """Allows filtering patients by email and contact number."""
+
     class Meta:
         model = Patient
         fields = {
@@ -19,6 +21,8 @@ class PatientFilter(django_filters.FilterSet):
 
 
 class InsuranceFilter(django_filters.FilterSet):
+    """Allows filtering insurance records by patient, provider, and expiration date."""
+
     class Meta:
         model = Insurance
         fields = {
@@ -29,6 +33,8 @@ class InsuranceFilter(django_filters.FilterSet):
 
 
 class MedicalRecordFilter(django_filters.FilterSet):
+    """Allows filtering medical records by patient, date, and follow-up date."""
+
     class Meta:
         model = MedicalRecord
         fields = {
@@ -39,6 +45,8 @@ class MedicalRecordFilter(django_filters.FilterSet):
 
 
 class PatientViewSet(viewsets.ModelViewSet):
+    """ViewSet for listing, creating, updating, and deleting patients."""
+
     serializer_class = PatientSerializer
     queryset = Patient.objects.all()
     filterset_class = PatientFilter
@@ -48,6 +56,8 @@ class PatientViewSet(viewsets.ModelViewSet):
 
 
 class InsuranceViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing insurance policies associated with patients."""
+
     serializer_class = InsuranceSerializer
     queryset = Insurance.objects.all()
     filterset_class = InsuranceFilter
@@ -56,6 +66,8 @@ class InsuranceViewSet(viewsets.ModelViewSet):
 
 
 class MedicalRecordViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing medical records and their diagnosis/treatment data."""
+
     serializer_class = MedicalRecordSerializer
     queryset = MedicalRecord.objects.all()
     filterset_class = MedicalRecordFilter

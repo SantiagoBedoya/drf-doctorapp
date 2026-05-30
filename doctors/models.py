@@ -3,6 +3,8 @@ from django.db import models
 
 
 class Doctor(models.Model):
+    """Represents a medical doctor with their professional and contact information."""
+
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -21,11 +23,15 @@ class Doctor(models.Model):
 
 
 class Department(models.Model):
+    """Represents a medical department or specialty area."""
+
     name = models.CharField(max_length=100)
     description = models.TextField()
 
 
 class DoctorAvailability(models.Model):
+    """Represents a date/time range during which a doctor is available."""
+
     doctor = models.ForeignKey(Doctor, related_name='availabilities', on_delete=models.CASCADE)
     start_date = models.DateField()
     end_date = models.DateField()
@@ -36,12 +42,16 @@ class DoctorAvailability(models.Model):
         ordering = ['start_date', 'start_time']
 
 class MedicalNote(models.Model):
+    """Represents a medical note recorded by a doctor."""
+
     doctor = models.ForeignKey(Doctor, related_name='medical_notes', on_delete=models.CASCADE)
     note = models.TextField()
     date = models.DateField()
 
 
 class DoctorReview(models.Model):
+    """Represents a patient's review and rating for a doctor."""
+
     doctor = models.ForeignKey(Doctor, related_name='reviews', on_delete=models.CASCADE)
     patient = models.ForeignKey('patients.Patient', related_name='doctor_reviews', on_delete=models.CASCADE)
     rating = models.IntegerField()

@@ -3,8 +3,9 @@ from rest_framework import serializers
 from bookings.serializers import AppointmentSerializer
 from patients.models import Insurance, MedicalRecord, Patient
 
+
 class PatientSerializer(serializers.ModelSerializer):
-    appointments = AppointmentSerializer(many=True, read_only=True, source='patient')
+    appointments = AppointmentSerializer(many=True, read_only=True, source='appointments')
     age = serializers.SerializerMethodField()
 
     class Meta:

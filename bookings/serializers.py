@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from bookings.models import Appointment, MedicalNote
+from bookings.models import Appointment, AppointmentStatus, MedicalNote
 
 
 class AppointmentSerializer(serializers.ModelSerializer):
@@ -8,7 +8,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
     def validate_status(self, value):
-        valid_statuses = [s.value for s in Appointment.Status]
+        valid_statuses = [s.value for s in AppointmentStatus]
         if value not in valid_statuses:
             raise serializers.ValidationError(
                 f"Invalid status '{value}'. Must be one of: {', '.join(valid_statuses)}"

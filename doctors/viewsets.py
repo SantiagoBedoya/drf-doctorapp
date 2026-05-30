@@ -17,6 +17,8 @@ from bookings.models import Appointment
 
 
 class DoctorFilter(django_filters.FilterSet):
+    """Allows filtering doctors by vacation status, qualification, and email."""
+
     class Meta:
         model = Doctor
         fields = {
@@ -27,6 +29,8 @@ class DoctorFilter(django_filters.FilterSet):
 
 
 class DoctorAvailabilityFilter(django_filters.FilterSet):
+    """Allows filtering availabilities by doctor and date range."""
+
     class Meta:
         model = DoctorAvailability
         fields = {
@@ -37,6 +41,8 @@ class DoctorAvailabilityFilter(django_filters.FilterSet):
 
 
 class MedicalNoteFilter(django_filters.FilterSet):
+    """Allows filtering medical notes by doctor and date."""
+
     class Meta:
         model = MedicalNote
         fields = {
@@ -46,6 +52,8 @@ class MedicalNoteFilter(django_filters.FilterSet):
 
 
 class DoctorReviewFilter(django_filters.FilterSet):
+    """Allows filtering reviews by doctor, patient, and rating."""
+
     class Meta:
         model = DoctorReview
         fields = {
@@ -65,6 +73,7 @@ class DoctorViewSet(viewsets.ModelViewSet):
     ordering = ['first_name', 'last_name']
 
     def _check_doctor_owner(self, request, doctor):
+        """Verify the requesting user owns this doctor profile or is staff."""
         if not request.user.is_staff and (
             doctor.user is None or doctor.user != request.user
         ):
@@ -73,7 +82,8 @@ class DoctorViewSet(viewsets.ModelViewSet):
             )
 
     @action(['POST'], detail=True, url_path='set-on-vacation')
-    def set_on_vacation(self, request, pk):
+    def set_on_vacation(self, request, pk=None):
+        """Mark a doctor as on vacation. Only the owner or staff can perform this."""
         doctor = self.get_object()
         self._check_doctor_owner(request, doctor)
         doctor.is_on_vacation = True
@@ -81,7 +91,8 @@ class DoctorViewSet(viewsets.ModelViewSet):
         return Response({"status": "The doctor is on vacation"})
 
     @action(['POST'], detail=True, url_path='set-off-vacation')
-    def set_off_vacation(self, request, pk):
+    def set_off_vacation(self, request, pk=None):
+        """Mark a doctor as not on vacation. Only the owner or staff can perform this."""
         doctor = self.get_object()
         self._check_doctor_owner(request, doctor)
         doctor.is_on_vacation = False
@@ -89,7 +100,8 @@ class DoctorViewSet(viewsets.ModelViewSet):
         return Response({"status": "The doctor is not on vacation"})
 
     @action(['POST', 'GET'], detail=True, serializer_class=AppointmentSerializer)
-    def appointments(self, request, pk):
+    def appointments(self, request, pk=None):
+        """List or create appointments for a specific doctor. POST requires owner/staff permissions."""
         doctor = self.get_object()
         data = request.data.copy()
         data['doctor'] = doctor.id

@@ -1,6 +1,8 @@
 from django.db import models
 
 class Patient(models.Model):
+    """Represents a patient with personal details and medical history."""
+
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     date_of_birth = models.DateField()
@@ -11,6 +13,8 @@ class Patient(models.Model):
 
 
 class Insurance(models.Model):
+    """Represents an insurance policy associated with a patient."""
+
     patient = models.ForeignKey(Patient, related_name='insurances', on_delete=models.CASCADE)
     provider = models.CharField(max_length=100)
     policy_number = models.CharField(max_length=100)
@@ -18,6 +22,8 @@ class Insurance(models.Model):
 
 
 class MedicalRecord(models.Model):
+    """Represents a medical record entry tracking diagnosis and treatment for a patient."""
+
     patient = models.ForeignKey(Patient, related_name='medical_records', on_delete=models.CASCADE)
     date = models.DateField()
     diagnosos = models.TextField()
