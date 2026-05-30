@@ -21,7 +21,9 @@ class DoctorViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly, IsDoctor]
 
     def _check_doctor_owner(self, request, doctor):
-        if not request.user.is_staff and doctor.user != request.user:
+        if not request.user.is_staff and (
+            doctor.user is None or doctor.user != request.user
+        ):
             self.permission_denied(
                 request, message="You do not have permission to modify this doctor."
             )
@@ -49,8 +51,8 @@ class DoctorViewSet(viewsets.ModelViewSet):
         data['doctor'] = doctor.id
 
         if request.method == 'POST':
-            if not request.user.is_staff and request.user != (
-                doctor.user if doctor.user else None
+            if not request.user.is_staff and (
+                doctor.user is None or doctor.user != request.user
             ):
                 self.permission_denied(
                     request, message="You do not have permission to create appointments for this doctor."
