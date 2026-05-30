@@ -5,6 +5,7 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
+    """Updates ForeignKey fields on Appointment and MedicalNote to use explicit related_name values."""
 
     dependencies = [
         ('bookings', '0003_alter_appointment_status'),
@@ -13,16 +14,19 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        # Add explicit related_name for reverse relation from Doctor to Appointment
         migrations.AlterField(
             model_name='appointment',
             name='doctor',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='appointments', to='doctors.doctor'),
         ),
+        # Add explicit related_name for reverse relation from Patient to Appointment
         migrations.AlterField(
             model_name='appointment',
             name='patient',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='appointments', to='patients.patient'),
         ),
+        # Add explicit related_name for reverse relation from Appointment to MedicalNote
         migrations.AlterField(
             model_name='medicalnote',
             name='appointment',

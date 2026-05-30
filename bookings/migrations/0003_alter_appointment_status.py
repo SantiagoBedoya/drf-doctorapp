@@ -4,6 +4,7 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
+    """Alters the status field on Appointment to use TextChoices with predefined status options."""
 
     dependencies = [
         ('bookings', '0002_appointment_appointment_time_and_more'),

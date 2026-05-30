@@ -1,9 +1,16 @@
-import django_filters
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from bookings.models import Appointment
 from bookings.serializers import AppointmentSerializer
+from doctors.filters import (
+    DoctorAvailabilityFilter,
+    DoctorFilter,
+    DoctorReviewFilter,
+    MedicalNoteFilter,
+)
+from doctors.models import Department, Doctor, DoctorAvailability, DoctorReview, MedicalNote
 from doctors.permissions import IsDoctor
 from doctors.serializers import (
     DepartmentSerializer,
@@ -12,55 +19,6 @@ from doctors.serializers import (
     DoctorSerializer,
     MedicalNoteSerializer,
 )
-from doctors.models import Department, Doctor, DoctorAvailability, DoctorReview, MedicalNote
-from bookings.models import Appointment
-
-
-class DoctorFilter(django_filters.FilterSet):
-    """Allows filtering doctors by vacation status, qualification, and email."""
-
-    class Meta:
-        model = Doctor
-        fields = {
-            'is_on_vacation': ['exact'],
-            'qualification': ['exact', 'icontains'],
-            'email': ['exact', 'icontains'],
-        }
-
-
-class DoctorAvailabilityFilter(django_filters.FilterSet):
-    """Allows filtering availabilities by doctor and date range."""
-
-    class Meta:
-        model = DoctorAvailability
-        fields = {
-            'doctor_id': ['exact'],
-            'start_date': ['exact', 'gte', 'lte'],
-            'end_date': ['exact', 'gte', 'lte'],
-        }
-
-
-class MedicalNoteFilter(django_filters.FilterSet):
-    """Allows filtering medical notes by doctor and date."""
-
-    class Meta:
-        model = MedicalNote
-        fields = {
-            'doctor_id': ['exact'],
-            'date': ['exact', 'gte', 'lte'],
-        }
-
-
-class DoctorReviewFilter(django_filters.FilterSet):
-    """Allows filtering reviews by doctor, patient, and rating."""
-
-    class Meta:
-        model = DoctorReview
-        fields = {
-            'doctor_id': ['exact'],
-            'patient_id': ['exact'],
-            'rating': ['exact', 'gte', 'lte'],
-        }
 
 
 class DoctorViewSet(viewsets.ModelViewSet):
@@ -74,11 +32,14 @@ class DoctorViewSet(viewsets.ModelViewSet):
     ordering_fields = ['first_name', 'last_name', 'qualification', 'email']
     ordering = ['first_name', 'last_name']
 
+    def _is_doctor_owner(self, request, doctor):
+        """Check if the requesting user owns the doctor profile or is staff."""
+        return request.user.is_staff or (
+            doctor.user is not None and doctor.user == request.user
+        )
+
     def _check_doctor_owner(self, request, doctor):
-        """Verify the requesting user owns this doctor profile or is staff."""
-        if not request.user.is_staff and (
-            doctor.user is None or doctor.user != request.user
-        ):
+        if not self._is_doctor_owner(request, doctor):
             self.permission_denied(
                 request, message="You do not have permission to modify this doctor."
             )
@@ -101,29 +62,29 @@ class DoctorViewSet(viewsets.ModelViewSet):
         doctor.save()
         return Response({"status": "The doctor is not on vacation"})
 
-    @action(['POST', 'GET'], detail=True, serializer_class=AppointmentSerializer)
-    def appointments(self, request, pk=None):
-        """List or create appointments for a specific doctor. POST requires owner/staff permissions."""
-        doctor = self.get_object()
+    def _create_appointment(self, request, doctor):
         data = request.data.copy()
         data['doctor'] = doctor.id
+        serializer = AppointmentSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def _list_appointments(self, pk):
+        appointments = Appointment.objects.filter(doctor_id=pk)
+        serializer = AppointmentSerializer(appointments, many=True)
+        return Response(serializer.data)
+
+    @action(['POST', 'GET'], detail=True, serializer_class=AppointmentSerializer)
+    def appointments(self, request, pk=None):
+        """List or create appointments for a specific doctor."""
+        doctor = self.get_object()
 
         if request.method == 'POST':
-            if not request.user.is_staff and (
-                doctor.user is None or doctor.user != request.user
-            ):
-                self.permission_denied(
-                    request, message="You do not have permission to create appointments for this doctor."
-                )
-            serializer = AppointmentSerializer(data=data)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            self._check_doctor_owner(request, doctor)
+            return self._create_appointment(request, doctor)
 
-        if request.method == 'GET':
-            appointments = Appointment.objects.filter(doctor_id = pk)
-            serializer = AppointmentSerializer(appointments, many=True)
-            return Response(serializer.data)
+        return self._list_appointments(pk)
 
 
 class DepartmentViewSet(viewsets.ModelViewSet):

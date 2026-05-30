@@ -23,7 +23,11 @@ class Appointment(models.Model):
     appointment_date = models.DateField()
     appointment_time = models.TimeField(null=True, blank=True)
     notes = models.TextField()
-    status = models.CharField(max_length=20, choices=AppointmentStatus.choices, default=AppointmentStatus.SCHEDULED)
+    status = models.CharField(
+        max_length=20,
+        choices=AppointmentStatus.choices,
+        default=AppointmentStatus.SCHEDULED,
+    )
 
 
 class MedicalNote(models.Model):
