@@ -5,6 +5,8 @@ from patients.models import Patient
 
 
 class AppointmentStatus(models.TextChoices):
+    """Defines the possible states of a medical appointment."""
+
     SCHEDULED = 'scheduled', 'Scheduled'
     CONFIRMED = 'confirmed', 'Confirmed'
     IN_PROGRESS = 'in_progress', 'In Progress'

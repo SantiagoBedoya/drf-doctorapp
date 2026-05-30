@@ -23,10 +23,10 @@ class InsuranceAdmin(admin.ModelAdmin):
 class MedicalRecordAdmin(admin.ModelAdmin):
     """Admin configuration for managing patient medical records."""
 
-    list_display = ['patient', 'date', 'diagnosis', 'follow_up_date']
+    list_display = ['patient', 'date', 'get_diagnosis', 'follow_up_date']
     list_filter = ['date', 'follow_up_date']
 
-    def diagnosis(self, obj):
+    def get_diagnosis(self, obj):
         """Truncate and display the diagnosis text for the admin list view."""
-        return obj.diagnosos[:50] + '...' if len(obj.diagnosos) > 50 else obj.diagnosos
-    diagnosis.short_description = 'Diagnosis'
+        return obj.diagnosis[:50] + '...' if len(obj.diagnosis) > 50 else obj.diagnosis
+    get_diagnosis.short_description = 'Diagnosis'

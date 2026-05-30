@@ -26,6 +26,6 @@ class MedicalRecord(models.Model):
 
     patient = models.ForeignKey(Patient, related_name='medical_records', on_delete=models.CASCADE)
     date = models.DateField()
-    diagnosos = models.TextField()
+    diagnosis = models.TextField()
     treatment = models.TextField()
     follow_up_date = models.DateField()

@@ -64,6 +64,8 @@ class DoctorReviewFilter(django_filters.FilterSet):
 
 
 class DoctorViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing doctor profiles. Requires authentication and doctor group membership."""
+
     serializer_class = DoctorSerializer
     queryset = Doctor.objects.all()
     permission_classes = [IsAuthenticatedOrReadOnly, IsDoctor]
@@ -125,6 +127,8 @@ class DoctorViewSet(viewsets.ModelViewSet):
 
 
 class DepartmentViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing medical departments. Publicly accessible."""
+
     serializer_class = DepartmentSerializer
     queryset = Department.objects.all()
     search_fields = ['name', 'description']
@@ -133,6 +137,8 @@ class DepartmentViewSet(viewsets.ModelViewSet):
 
 
 class DoctorAvailabilityViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing doctor availability schedules. Publicly accessible."""
+
     serializer_class = DoctorAvailabilitySerializer
     queryset = DoctorAvailability.objects.all()
     filterset_class = DoctorAvailabilityFilter
@@ -140,6 +146,8 @@ class DoctorAvailabilityViewSet(viewsets.ModelViewSet):
 
 
 class MedicalNoteViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing medical notes linked to doctors."""
+
     serializer_class = MedicalNoteSerializer
     queryset = MedicalNote.objects.all()
     filterset_class = MedicalNoteFilter
@@ -148,6 +156,8 @@ class MedicalNoteViewSet(viewsets.ModelViewSet):
 
 
 class DoctorReviewViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing patient reviews and ratings for doctors."""
+
     serializer_class = DoctorReviewSerializer
     queryset = DoctorReview.objects.all()
     filterset_class = DoctorReviewFilter
