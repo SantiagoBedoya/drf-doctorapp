@@ -155,21 +155,21 @@ class DoctorSerializerTest(TestCase):
         self.assertEqual(serializer.validated_data["first_name"], "John")
         self.assertEqual(serializer.validated_data["last_name"], "Doe")
 
-    def test_email_validation_requires_example_com(self):
+    def test_email_validation_rejects_invalid_format(self):
         data = self.valid_data.copy()
-        data["email"] = "john@gmail.com"
+        data["email"] = "invalid-email"
         serializer = DoctorSerializer(data=data)
         self.assertFalse(serializer.is_valid())
         self.assertIn("email", serializer.errors)
 
     def test_email_validation_error_message(self):
         data = self.valid_data.copy()
-        data["email"] = "john@gmail.com"
+        data["email"] = "invalid-email"
         serializer = DoctorSerializer(data=data)
         serializer.is_valid()
-        self.assertIn("example.com", str(serializer.errors["email"]))
+        self.assertIn("valid email", str(serializer.errors["email"]).lower())
 
-    def test_email_validation_passes_with_example_com(self):
+    def test_email_validation_passes_with_valid_email(self):
         data = self.valid_data.copy()
         data["email"] = "test@example.com"
         serializer = DoctorSerializer(data=data)
@@ -194,11 +194,25 @@ class DoctorSerializerTest(TestCase):
         serializer = DoctorSerializer(data=data)
         self.assertTrue(serializer.is_valid())
 
+    def test_contact_number_validation_rejects_non_digits(self):
+        data = self.valid_data.copy()
+        data["contact_number"] = "abc123"
+        serializer = DoctorSerializer(data=data)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("contact_number", serializer.errors)
+
+    def test_contact_number_validation_passes_with_digits(self):
+        data = self.valid_data.copy()
+        data["contact_number"] = "1234567"
+        serializer = DoctorSerializer(data=data)
+        self.assertTrue(serializer.is_valid())
+
     def test_serializer_uses_all_fields(self):
         serializer = DoctorSerializer()
         expected_fields = {
             "id", "first_name", "last_name", "qualification",
-            "contact_number", "email", "address", "biography", "is_on_vacation",
+            "contact_number", "email", "address", "biography",
+            "is_on_vacation", "user",
         }
         self.assertEqual(set(serializer.fields.keys()), expected_fields)
 
@@ -316,6 +330,7 @@ class BaseAuthTestCase(APITestCase):
             address="123 Main St",
             biography="Cardiologist",
             is_on_vacation=False,
+            user=self.doctor_user,
         )
 
         self.patient = Patient.objects.create(
@@ -407,7 +422,7 @@ class DoctorViewSetCRUDTest(BaseAuthTestCase):
             "last_name": "Smith",
             "qualification": "PhD",
             "contact_number": "0987654321",
-            "email": "jane@gmail.com",
+            "email": "not-an-email",
             "address": "456 Oak Ave",
             "biography": "Neurologist",
             "is_on_vacation": False,
@@ -491,6 +506,30 @@ class DoctorViewSetCustomActionsTest(BaseAuthTestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_set_on_vacation_by_other_user_returns_403(self):
+        other_user = User.objects.create_user(
+            username="other_doctor", password="testpass123"
+        )
+        other_user.groups.add(Group.objects.get(name="doctors"))
+        self.client.force_authenticate(user=other_user)
+        response = self.client.post(
+            f"/api/doctors/{self.doctor.id}/set-on-vacation/"
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_set_off_vacation_by_other_user_returns_403(self):
+        other_user = User.objects.create_user(
+            username="other_doctor", password="testpass123"
+        )
+        other_user.groups.add(Group.objects.get(name="doctors"))
+        self.client.force_authenticate(user=other_user)
+        self.doctor.is_on_vacation = True
+        self.doctor.save()
+        response = self.client.post(
+            f"/api/doctors/{self.doctor.id}/set-off-vacation/"
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_vacation_actions_on_nonexistent_doctor_returns_404(self):
         self.client.force_authenticate(user=self.doctor_user)
         response = self.client.post("/api/doctors/999/set-on-vacation/")
@@ -541,6 +580,26 @@ class DoctorViewSetCustomActionsTest(BaseAuthTestCase):
         data = {
             "patient": self.patient.id,
             "appointment_date": "2025-07-01",
+            "notes": "Regular checkup",
+            "status": "scheduled",
+        }
+        response = self.client.post(
+            f"/api/doctors/{self.doctor.id}/appointments/",
+            data,
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_create_appointment_by_other_user_returns_403(self):
+        other_user = User.objects.create_user(
+            username="other_doctor", password="testpass123"
+        )
+        other_user.groups.add(Group.objects.get(name="doctors"))
+        self.client.force_authenticate(user=other_user)
+        data = {
+            "patient": self.patient.id,
+            "appointment_date": "2025-07-01",
+            "appointment_time": "10:00:00",
             "notes": "Regular checkup",
             "status": "scheduled",
         }

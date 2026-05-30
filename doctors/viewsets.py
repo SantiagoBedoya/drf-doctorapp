@@ -20,9 +20,16 @@ class DoctorViewSet(viewsets.ModelViewSet):
     queryset = Doctor.objects.all()
     permission_classes = [IsAuthenticatedOrReadOnly, IsDoctor]
 
+    def _check_doctor_owner(self, request, doctor):
+        if not request.user.is_staff and doctor.user != request.user:
+            self.permission_denied(
+                request, message="You do not have permission to modify this doctor."
+            )
+
     @action(['POST'], detail=True, url_path='set-on-vacation')
     def set_on_vacation(self, request, pk):
         doctor = self.get_object()
+        self._check_doctor_owner(request, doctor)
         doctor.is_on_vacation = True
         doctor.save()
         return Response({"status": "The doctor is on vacation"})
@@ -30,6 +37,7 @@ class DoctorViewSet(viewsets.ModelViewSet):
     @action(['POST'], detail=True, url_path='set-off-vacation')
     def set_off_vacation(self, request, pk):
         doctor = self.get_object()
+        self._check_doctor_owner(request, doctor)
         doctor.is_on_vacation = False
         doctor.save()
         return Response({"status": "The doctor is not on vacation"})
@@ -41,6 +49,12 @@ class DoctorViewSet(viewsets.ModelViewSet):
         data['doctor'] = doctor.id
 
         if request.method == 'POST':
+            if not request.user.is_staff and request.user != (
+                doctor.user if doctor.user else None
+            ):
+                self.permission_denied(
+                    request, message="You do not have permission to create appointments for this doctor."
+                )
             serializer = AppointmentSerializer(data=data)
             serializer.is_valid(raise_exception=True)
             serializer.save()

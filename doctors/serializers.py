@@ -1,3 +1,7 @@
+import re
+
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
 from rest_framework import serializers
 from doctors.models import Department, Doctor, DoctorAvailability, DoctorReview, MedicalNote
 
@@ -7,8 +11,17 @@ class DoctorSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
     def validate_email(self, value):
-        if "@example.com" not in value:
-           raise serializers.ValidationError("The email should incude @example.com")
+        try:
+            validate_email(value)
+        except ValidationError:
+            raise serializers.ValidationError("Invalid email format")
+        return value
+
+    def validate_contact_number(self, value):
+        if not re.fullmatch(r'\d{7,15}', value):
+            raise serializers.ValidationError(
+                "Contact number must contain only digits (7-15 characters)"
+            )
         return value
 
     def validate(self, attrs):
