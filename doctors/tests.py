@@ -383,8 +383,8 @@ class DoctorViewSetCRUDTest(BaseAuthTestCase):
         self.client.force_authenticate(user=self.doctor_user)
         response = self.client.get("/api/doctors/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["first_name"], "John")
+        self.assertEqual(len(response.data['results']), 1)
+        self.assertEqual(response.data['results'][0]["first_name"], "John")
 
     def test_retrieve_doctor(self):
         self.client.force_authenticate(user=self.doctor_user)
@@ -623,12 +623,12 @@ class DepartmentViewSetTest(BaseAuthTestCase):
         Department.objects.create(name="Neurology", description="Brain and nerves")
         response = self.client.get("/api/departments/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 2)
+        self.assertEqual(len(response.data['results']), 2)
 
     def test_list_departments_empty(self):
         response = self.client.get("/api/departments/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 0)
+        self.assertEqual(len(response.data['results']), 0)
 
     def test_create_department(self):
         data = {"name": "Cardiology", "description": "Heart and cardiovascular system"}
@@ -679,7 +679,7 @@ class DoctorAvailabilityViewSetTest(BaseAuthTestCase):
         )
         response = self.client.get("/api/availabilities/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(len(response.data['results']), 1)
 
     def test_create_availability(self):
         data = {
@@ -736,12 +736,12 @@ class MedicalNoteViewSetTest(BaseAuthTestCase):
         )
         response = self.client.get("/api/doctor-medical-notes/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(len(response.data['results']), 1)
 
     def test_list_notes_empty(self):
         response = self.client.get("/api/doctor-medical-notes/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 0)
+        self.assertEqual(len(response.data['results']), 0)
 
     def test_create_note(self):
         data = {
@@ -966,13 +966,13 @@ class DoctorReviewViewSetTest(BaseAuthTestCase):
         )
         response = self.client.get("/api/doctor-reviews/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["rating"], 4)
+        self.assertEqual(len(response.data['results']), 1)
+        self.assertEqual(response.data['results'][0]["rating"], 4)
 
     def test_list_reviews_empty(self):
         response = self.client.get("/api/doctor-reviews/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 0)
+        self.assertEqual(len(response.data['results']), 0)
 
     def test_create_review_invalid_rating_returns_400(self):
         data = {

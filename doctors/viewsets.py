@@ -1,3 +1,4 @@
+import django_filters
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -15,10 +16,53 @@ from doctors.models import Department, Doctor, DoctorAvailability, DoctorReview,
 from bookings.models import Appointment
 
 
+class DoctorFilter(django_filters.FilterSet):
+    class Meta:
+        model = Doctor
+        fields = {
+            'is_on_vacation': ['exact'],
+            'qualification': ['exact', 'icontains'],
+            'email': ['exact', 'icontains'],
+        }
+
+
+class DoctorAvailabilityFilter(django_filters.FilterSet):
+    class Meta:
+        model = DoctorAvailability
+        fields = {
+            'doctor_id': ['exact'],
+            'start_date': ['exact', 'gte', 'lte'],
+            'end_date': ['exact', 'gte', 'lte'],
+        }
+
+
+class MedicalNoteFilter(django_filters.FilterSet):
+    class Meta:
+        model = MedicalNote
+        fields = {
+            'doctor_id': ['exact'],
+            'date': ['exact', 'gte', 'lte'],
+        }
+
+
+class DoctorReviewFilter(django_filters.FilterSet):
+    class Meta:
+        model = DoctorReview
+        fields = {
+            'doctor_id': ['exact'],
+            'patient_id': ['exact'],
+            'rating': ['exact', 'gte', 'lte'],
+        }
+
+
 class DoctorViewSet(viewsets.ModelViewSet):
     serializer_class = DoctorSerializer
     queryset = Doctor.objects.all()
     permission_classes = [IsAuthenticatedOrReadOnly, IsDoctor]
+    filterset_class = DoctorFilter
+    search_fields = ['first_name', 'last_name', 'qualification', 'email', 'biography']
+    ordering_fields = ['first_name', 'last_name', 'qualification', 'email']
+    ordering = ['first_name', 'last_name']
 
     def _check_doctor_owner(self, request, doctor):
         if not request.user.is_staff and (
@@ -71,18 +115,29 @@ class DoctorViewSet(viewsets.ModelViewSet):
 class DepartmentViewSet(viewsets.ModelViewSet):
     serializer_class = DepartmentSerializer
     queryset = Department.objects.all()
+    search_fields = ['name', 'description']
+    ordering_fields = ['name']
+    ordering = ['name']
 
 
 class DoctorAvailabilityViewSet(viewsets.ModelViewSet):
     serializer_class = DoctorAvailabilitySerializer
     queryset = DoctorAvailability.objects.all()
+    filterset_class = DoctorAvailabilityFilter
+    ordering_fields = ['start_date', 'end_date', 'start_time']
 
 
 class MedicalNoteViewSet(viewsets.ModelViewSet):
     serializer_class = MedicalNoteSerializer
     queryset = MedicalNote.objects.all()
+    filterset_class = MedicalNoteFilter
+    ordering_fields = ['date']
+    ordering = ['-date']
 
 
 class DoctorReviewViewSet(viewsets.ModelViewSet):
     serializer_class = DoctorReviewSerializer
     queryset = DoctorReview.objects.all()
+    filterset_class = DoctorReviewFilter
+    ordering_fields = ['rating', 'created_at']
+    ordering = ['-created_at']

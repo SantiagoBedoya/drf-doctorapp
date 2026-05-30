@@ -32,6 +32,9 @@ class DoctorAvailability(models.Model):
     start_time = models.TimeField()
     end_time = models.TimeField()
 
+    class Meta:
+        ordering = ['start_date', 'start_time']
+
 class MedicalNote(models.Model):
     doctor = models.ForeignKey(Doctor, related_name='medical_notes', on_delete=models.CASCADE)
     note = models.TextField()

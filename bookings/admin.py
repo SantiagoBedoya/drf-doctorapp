@@ -1,3 +1,16 @@
 from django.contrib import admin
 
-# Register your models here.
+from bookings.models import Appointment, MedicalNote
+
+
+@admin.register(Appointment)
+class AppointmentAdmin(admin.ModelAdmin):
+    list_display = ['patient', 'doctor', 'appointment_date', 'appointment_time', 'status']
+    list_filter = ['status', 'appointment_date']
+    search_fields = ['notes']
+
+
+@admin.register(MedicalNote)
+class MedicalNoteAdmin(admin.ModelAdmin):
+    list_display = ['appointment', 'date', 'note']
+    list_filter = ['date']
