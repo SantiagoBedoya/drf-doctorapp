@@ -3,8 +3,8 @@ from django.contrib.auth.models import User, Group
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APITestCase
-from doctors.models import Doctor, Department, DoctorAvailability, MedicalNote
-from doctors.serializers import DepartmentSerializer, DoctorAvailabilitySerializer, DoctorSerializer, MedicalNoteSerializer
+from doctors.models import Doctor, Department, DoctorAvailability, DoctorReview, MedicalNote
+from doctors.serializers import DepartmentSerializer, DoctorAvailabilitySerializer, DoctorReviewSerializer, DoctorSerializer, MedicalNoteSerializer
 from patients.models import Patient
 
 
@@ -155,21 +155,21 @@ class DoctorSerializerTest(TestCase):
         self.assertEqual(serializer.validated_data["first_name"], "John")
         self.assertEqual(serializer.validated_data["last_name"], "Doe")
 
-    def test_email_validation_requires_example_com(self):
+    def test_email_validation_rejects_invalid_format(self):
         data = self.valid_data.copy()
-        data["email"] = "john@gmail.com"
+        data["email"] = "invalid-email"
         serializer = DoctorSerializer(data=data)
         self.assertFalse(serializer.is_valid())
         self.assertIn("email", serializer.errors)
 
     def test_email_validation_error_message(self):
         data = self.valid_data.copy()
-        data["email"] = "john@gmail.com"
+        data["email"] = "invalid-email"
         serializer = DoctorSerializer(data=data)
         serializer.is_valid()
-        self.assertIn("example.com", str(serializer.errors["email"]))
+        self.assertIn("valid email", str(serializer.errors["email"]).lower())
 
-    def test_email_validation_passes_with_example_com(self):
+    def test_email_validation_passes_with_valid_email(self):
         data = self.valid_data.copy()
         data["email"] = "test@example.com"
         serializer = DoctorSerializer(data=data)
@@ -194,11 +194,25 @@ class DoctorSerializerTest(TestCase):
         serializer = DoctorSerializer(data=data)
         self.assertTrue(serializer.is_valid())
 
+    def test_contact_number_validation_rejects_non_digits(self):
+        data = self.valid_data.copy()
+        data["contact_number"] = "abc123"
+        serializer = DoctorSerializer(data=data)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("contact_number", serializer.errors)
+
+    def test_contact_number_validation_passes_with_digits(self):
+        data = self.valid_data.copy()
+        data["contact_number"] = "1234567"
+        serializer = DoctorSerializer(data=data)
+        self.assertTrue(serializer.is_valid())
+
     def test_serializer_uses_all_fields(self):
         serializer = DoctorSerializer()
         expected_fields = {
             "id", "first_name", "last_name", "qualification",
-            "contact_number", "email", "address", "biography", "is_on_vacation",
+            "contact_number", "email", "address", "biography",
+            "is_on_vacation", "user",
         }
         self.assertEqual(set(serializer.fields.keys()), expected_fields)
 
@@ -316,6 +330,7 @@ class BaseAuthTestCase(APITestCase):
             address="123 Main St",
             biography="Cardiologist",
             is_on_vacation=False,
+            user=self.doctor_user,
         )
 
         self.patient = Patient.objects.create(
@@ -407,7 +422,7 @@ class DoctorViewSetCRUDTest(BaseAuthTestCase):
             "last_name": "Smith",
             "qualification": "PhD",
             "contact_number": "0987654321",
-            "email": "jane@gmail.com",
+            "email": "not-an-email",
             "address": "456 Oak Ave",
             "biography": "Neurologist",
             "is_on_vacation": False,
@@ -491,6 +506,30 @@ class DoctorViewSetCustomActionsTest(BaseAuthTestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_set_on_vacation_by_other_user_returns_403(self):
+        other_user = User.objects.create_user(
+            username="other_doctor", password="testpass123"
+        )
+        other_user.groups.add(Group.objects.get(name="doctors"))
+        self.client.force_authenticate(user=other_user)
+        response = self.client.post(
+            f"/api/doctors/{self.doctor.id}/set-on-vacation/"
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_set_off_vacation_by_other_user_returns_403(self):
+        other_user = User.objects.create_user(
+            username="other_doctor", password="testpass123"
+        )
+        other_user.groups.add(Group.objects.get(name="doctors"))
+        self.client.force_authenticate(user=other_user)
+        self.doctor.is_on_vacation = True
+        self.doctor.save()
+        response = self.client.post(
+            f"/api/doctors/{self.doctor.id}/set-off-vacation/"
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_vacation_actions_on_nonexistent_doctor_returns_404(self):
         self.client.force_authenticate(user=self.doctor_user)
         response = self.client.post("/api/doctors/999/set-on-vacation/")
@@ -541,6 +580,26 @@ class DoctorViewSetCustomActionsTest(BaseAuthTestCase):
         data = {
             "patient": self.patient.id,
             "appointment_date": "2025-07-01",
+            "notes": "Regular checkup",
+            "status": "scheduled",
+        }
+        response = self.client.post(
+            f"/api/doctors/{self.doctor.id}/appointments/",
+            data,
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_create_appointment_by_other_user_returns_403(self):
+        other_user = User.objects.create_user(
+            username="other_doctor", password="testpass123"
+        )
+        other_user.groups.add(Group.objects.get(name="doctors"))
+        self.client.force_authenticate(user=other_user)
+        data = {
+            "patient": self.patient.id,
+            "appointment_date": "2025-07-01",
+            "appointment_time": "10:00:00",
             "notes": "Regular checkup",
             "status": "scheduled",
         }
@@ -744,3 +803,246 @@ class MedicalNoteViewSetTest(BaseAuthTestCase):
         response = self.client.delete(f"/api/doctor-medical-notes/{note.id}/")
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(MedicalNote.objects.count(), 0)
+
+
+class DoctorReviewModelTest(TestCase):
+    def setUp(self):
+        self.doctor = Doctor.objects.create(
+            first_name="John",
+            last_name="Doe",
+            qualification="MD",
+            contact_number="1234567890",
+            email="john@example.com",
+            address="123 Main St",
+            biography="Cardiologist",
+        )
+        self.patient = Patient.objects.create(
+            first_name="Jane",
+            last_name="Patient",
+            date_of_birth="1990-01-01",
+            contact_number="0987654321",
+            email="jane@example.com",
+            address="456 Oak Ave",
+            medical_history="None",
+        )
+        self.review = DoctorReview.objects.create(
+            doctor=self.doctor,
+            patient=self.patient,
+            rating=5,
+            comment="Excellent doctor",
+        )
+
+    def test_review_creation(self):
+        review = DoctorReview.objects.get(id=self.review.id)
+        self.assertEqual(review.doctor, self.doctor)
+        self.assertEqual(review.patient, self.patient)
+        self.assertEqual(review.rating, 5)
+        self.assertEqual(review.comment, "Excellent doctor")
+
+    def test_review_doctor_relation(self):
+        self.assertIn(self.review, self.doctor.reviews.all())
+
+    def test_review_patient_relation(self):
+        self.assertIn(self.review, self.patient.doctor_reviews.all())
+
+    def test_unique_together_doctor_patient(self):
+        with self.assertRaises(Exception):
+            DoctorReview.objects.create(
+                doctor=self.doctor,
+                patient=self.patient,
+                rating=3,
+                comment="Duplicate review",
+            )
+
+    def test_doctor_cascade_delete(self):
+        doctor_id = self.doctor.id
+        self.doctor.delete()
+        self.assertEqual(DoctorReview.objects.filter(doctor_id=doctor_id).count(), 0)
+
+
+class DoctorReviewSerializerTest(TestCase):
+    def setUp(self):
+        self.doctor = Doctor.objects.create(
+            first_name="John",
+            last_name="Doe",
+            qualification="MD",
+            contact_number="1234567890",
+            email="john@example.com",
+            address="123 Main St",
+            biography="Cardiologist",
+        )
+        self.patient = Patient.objects.create(
+            first_name="Jane",
+            last_name="Patient",
+            date_of_birth="1990-01-01",
+            contact_number="0987654321",
+            email="jane@example.com",
+            address="456 Oak Ave",
+            medical_history="None",
+        )
+
+    def test_valid_review_serializer(self):
+        data = {
+            "doctor": self.doctor.id,
+            "patient": self.patient.id,
+            "rating": 5,
+            "comment": "Great doctor",
+        }
+        serializer = DoctorReviewSerializer(data=data)
+        self.assertTrue(serializer.is_valid())
+
+    def test_rating_below_1_is_invalid(self):
+        data = {
+            "doctor": self.doctor.id,
+            "patient": self.patient.id,
+            "rating": 0,
+            "comment": "Bad",
+        }
+        serializer = DoctorReviewSerializer(data=data)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("rating", serializer.errors)
+
+    def test_rating_above_5_is_invalid(self):
+        data = {
+            "doctor": self.doctor.id,
+            "patient": self.patient.id,
+            "rating": 6,
+            "comment": "Too high",
+        }
+        serializer = DoctorReviewSerializer(data=data)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("rating", serializer.errors)
+
+    def test_rating_1_is_valid(self):
+        data = {
+            "doctor": self.doctor.id,
+            "patient": self.patient.id,
+            "rating": 1,
+            "comment": "Minimum",
+        }
+        serializer = DoctorReviewSerializer(data=data)
+        self.assertTrue(serializer.is_valid())
+
+    def test_blank_comment_is_valid(self):
+        data = {
+            "doctor": self.doctor.id,
+            "patient": self.patient.id,
+            "rating": 3,
+            "comment": "",
+        }
+        serializer = DoctorReviewSerializer(data=data)
+        self.assertTrue(serializer.is_valid())
+
+    def test_missing_doctor_is_invalid(self):
+        data = {
+            "patient": self.patient.id,
+            "rating": 4,
+            "comment": "No doctor",
+        }
+        serializer = DoctorReviewSerializer(data=data)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("doctor", serializer.errors)
+
+
+class DoctorReviewViewSetTest(BaseAuthTestCase):
+    def test_create_review(self):
+        data = {
+            "doctor": self.doctor.id,
+            "patient": self.patient.id,
+            "rating": 5,
+            "comment": "Excellent doctor",
+        }
+        response = self.client.post("/api/doctor-reviews/", data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(DoctorReview.objects.count(), 1)
+        self.assertEqual(response.data["rating"], 5)
+
+    def test_list_reviews(self):
+        DoctorReview.objects.create(
+            doctor=self.doctor,
+            patient=self.patient,
+            rating=4,
+            comment="Good doctor",
+        )
+        response = self.client.get("/api/doctor-reviews/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["rating"], 4)
+
+    def test_list_reviews_empty(self):
+        response = self.client.get("/api/doctor-reviews/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)
+
+    def test_create_review_invalid_rating_returns_400(self):
+        data = {
+            "doctor": self.doctor.id,
+            "patient": self.patient.id,
+            "rating": 10,
+            "comment": "Too high",
+        }
+        response = self.client.post("/api/doctor-reviews/", data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_review_missing_doctor_returns_400(self):
+        data = {
+            "patient": self.patient.id,
+            "rating": 4,
+            "comment": "No doctor",
+        }
+        response = self.client.post("/api/doctor-reviews/", data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_retrieve_review(self):
+        review = DoctorReview.objects.create(
+            doctor=self.doctor,
+            patient=self.patient,
+            rating=3,
+            comment="Okay",
+        )
+        response = self.client.get(f"/api/doctor-reviews/{review.id}/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["comment"], "Okay")
+
+    def test_update_review(self):
+        review = DoctorReview.objects.create(
+            doctor=self.doctor,
+            patient=self.patient,
+            rating=2,
+            comment="Not great",
+        )
+        data = {"rating": 4, "comment": "Updated to better"}
+        response = self.client.patch(
+            f"/api/doctor-reviews/{review.id}/", data, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        review.refresh_from_db()
+        self.assertEqual(review.rating, 4)
+        self.assertEqual(review.comment, "Updated to better")
+
+    def test_delete_review(self):
+        review = DoctorReview.objects.create(
+            doctor=self.doctor,
+            patient=self.patient,
+            rating=3,
+            comment="Okay",
+        )
+        response = self.client.delete(f"/api/doctor-reviews/{review.id}/")
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(DoctorReview.objects.count(), 0)
+
+    def test_duplicate_review_returns_400(self):
+        DoctorReview.objects.create(
+            doctor=self.doctor,
+            patient=self.patient,
+            rating=5,
+            comment="First review",
+        )
+        data = {
+            "doctor": self.doctor.id,
+            "patient": self.patient.id,
+            "rating": 3,
+            "comment": "Second review",
+        }
+        response = self.client.post("/api/doctor-reviews/", data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
