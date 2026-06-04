@@ -9,6 +9,7 @@ from patients.models import Patient
 
 
 class DoctorModelTest(TestCase):
+    """Tests for Doctor model creation and field defaults."""
     def setUp(self):
         self.doctor = Doctor.objects.create(
             first_name="John",
@@ -52,6 +53,7 @@ class DoctorModelTest(TestCase):
 
 
 class DepartmentModelTest(TestCase):
+    """Tests for Department model creation."""
     def setUp(self):
         self.department = Department.objects.create(
             name="Cardiology",
@@ -65,6 +67,7 @@ class DepartmentModelTest(TestCase):
 
 
 class DoctorAvailabilityModelTest(TestCase):
+    """Tests for DoctorAvailability model creation, relations, and cascade delete."""
     def setUp(self):
         self.doctor = Doctor.objects.create(
             first_name="John",
@@ -101,6 +104,7 @@ class DoctorAvailabilityModelTest(TestCase):
 
 
 class MedicalNoteModelTest(TestCase):
+    """Tests for MedicalNote model creation, relations, and cascade delete."""
     def setUp(self):
         self.doctor = Doctor.objects.create(
             first_name="John",
@@ -133,6 +137,7 @@ class MedicalNoteModelTest(TestCase):
 
 
 class DoctorSerializerTest(TestCase):
+    """Tests for DoctorSerializer validation, fields, and error handling."""
     def setUp(self):
         self.valid_data = {
             "first_name": "John",
@@ -218,6 +223,7 @@ class DoctorSerializerTest(TestCase):
 
 
 class DepartmentSerializerTest(TestCase):
+    """Tests for DepartmentSerializer validation and field presence."""
     def test_valid_department_serializer(self):
         data = {"name": "Cardiology", "description": "Heart care"}
         serializer = DepartmentSerializer(data=data)
@@ -235,6 +241,7 @@ class DepartmentSerializerTest(TestCase):
 
 
 class DoctorAvailabilitySerializerTest(TestCase):
+    """Tests for DoctorAvailabilitySerializer validation."""
     def setUp(self):
         self.doctor = Doctor.objects.create(
             first_name="John",
@@ -270,6 +277,7 @@ class DoctorAvailabilitySerializerTest(TestCase):
 
 
 class MedicalNoteSerializerTest(TestCase):
+    """Tests for MedicalNoteSerializer validation and required fields."""
     def setUp(self):
         self.doctor = Doctor.objects.create(
             first_name="John",
@@ -345,6 +353,7 @@ class BaseAuthTestCase(APITestCase):
 
 
 class DoctorViewSetPermissionsTest(BaseAuthTestCase):
+    """Tests access control for DoctorViewSet endpoints."""
     def test_list_requires_doctor_group(self):
         response = self.client.get("/api/doctors/")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -379,12 +388,14 @@ class DoctorViewSetPermissionsTest(BaseAuthTestCase):
 
 
 class DoctorViewSetCRUDTest(BaseAuthTestCase):
+    """Tests CRUD operations for DoctorViewSet endpoints."""
     def test_list_doctors(self):
         self.client.force_authenticate(user=self.doctor_user)
         response = self.client.get("/api/doctors/")
+        # Verify paginated response: one doctor in results with correct name
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["first_name"], "John")
+        self.assertEqual(len(response.data['results']), 1)
+        self.assertEqual(response.data['results'][0]["first_name"], "John")
 
     def test_retrieve_doctor(self):
         self.client.force_authenticate(user=self.doctor_user)
@@ -478,6 +489,7 @@ class DoctorViewSetCRUDTest(BaseAuthTestCase):
 
 
 class DoctorViewSetCustomActionsTest(BaseAuthTestCase):
+    """Tests custom actions on DoctorViewSet: vacation toggle, appointments."""
     def test_set_on_vacation(self):
         self.client.force_authenticate(user=self.doctor_user)
         response = self.client.post(
@@ -618,17 +630,19 @@ class DoctorViewSetCustomActionsTest(BaseAuthTestCase):
 
 
 class DepartmentViewSetTest(BaseAuthTestCase):
+    """Tests CRUD operations for DepartmentViewSet."""
     def test_list_departments(self):
+        # Create two departments and verify paginated list returns both
         Department.objects.create(name="Cardiology", description="Heart care")
         Department.objects.create(name="Neurology", description="Brain and nerves")
         response = self.client.get("/api/departments/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 2)
+        self.assertEqual(len(response.data['results']), 2)
 
     def test_list_departments_empty(self):
         response = self.client.get("/api/departments/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 0)
+        self.assertEqual(len(response.data['results']), 0)
 
     def test_create_department(self):
         data = {"name": "Cardiology", "description": "Heart and cardiovascular system"}
@@ -669,7 +683,9 @@ class DepartmentViewSetTest(BaseAuthTestCase):
 
 
 class DoctorAvailabilityViewSetTest(BaseAuthTestCase):
+    """Tests CRUD operations for DoctorAvailabilityViewSet."""
     def test_list_availabilities(self):
+        # Create one availability record and verify paginated list returns it
         DoctorAvailability.objects.create(
             doctor=self.doctor,
             start_date="2025-01-01",
@@ -679,7 +695,7 @@ class DoctorAvailabilityViewSetTest(BaseAuthTestCase):
         )
         response = self.client.get("/api/availabilities/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(len(response.data['results']), 1)
 
     def test_create_availability(self):
         data = {
@@ -728,7 +744,9 @@ class DoctorAvailabilityViewSetTest(BaseAuthTestCase):
 
 
 class MedicalNoteViewSetTest(BaseAuthTestCase):
+    """Tests CRUD operations for MedicalNoteViewSet."""
     def test_list_notes(self):
+        # Create one medical note and verify paginated list returns it
         MedicalNote.objects.create(
             doctor=self.doctor,
             note="Patient is recovering",
@@ -736,12 +754,12 @@ class MedicalNoteViewSetTest(BaseAuthTestCase):
         )
         response = self.client.get("/api/doctor-medical-notes/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(len(response.data['results']), 1)
 
     def test_list_notes_empty(self):
         response = self.client.get("/api/doctor-medical-notes/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 0)
+        self.assertEqual(len(response.data['results']), 0)
 
     def test_create_note(self):
         data = {
@@ -806,6 +824,7 @@ class MedicalNoteViewSetTest(BaseAuthTestCase):
 
 
 class DoctorReviewModelTest(TestCase):
+    """Tests for DoctorReview model creation, relations, unique constraint, and cascade delete."""
     def setUp(self):
         self.doctor = Doctor.objects.create(
             first_name="John",
@@ -861,6 +880,7 @@ class DoctorReviewModelTest(TestCase):
 
 
 class DoctorReviewSerializerTest(TestCase):
+    """Tests for DoctorReviewSerializer validation, rating range, and required fields."""
     def setUp(self):
         self.doctor = Doctor.objects.create(
             first_name="John",
@@ -945,6 +965,7 @@ class DoctorReviewSerializerTest(TestCase):
 
 
 class DoctorReviewViewSetTest(BaseAuthTestCase):
+    """Tests CRUD operations for DoctorReviewViewSet."""
     def test_create_review(self):
         data = {
             "doctor": self.doctor.id,
@@ -958,6 +979,7 @@ class DoctorReviewViewSetTest(BaseAuthTestCase):
         self.assertEqual(response.data["rating"], 5)
 
     def test_list_reviews(self):
+        # Create one review and verify paginated list returns it with correct rating
         DoctorReview.objects.create(
             doctor=self.doctor,
             patient=self.patient,
@@ -966,13 +988,13 @@ class DoctorReviewViewSetTest(BaseAuthTestCase):
         )
         response = self.client.get("/api/doctor-reviews/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["rating"], 4)
+        self.assertEqual(len(response.data['results']), 1)
+        self.assertEqual(response.data['results'][0]["rating"], 4)
 
     def test_list_reviews_empty(self):
         response = self.client.get("/api/doctor-reviews/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 0)
+        self.assertEqual(len(response.data['results']), 0)
 
     def test_create_review_invalid_rating_returns_400(self):
         data = {
