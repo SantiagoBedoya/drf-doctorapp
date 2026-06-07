@@ -11,7 +11,8 @@ from patients.models import Patient
 logger = logging.getLogger(__name__)
 
 
-def get_patient_count():
+def get_patient_count() -> int:
+    """Return total number of patients, or 0 if the database is unavailable."""
     try:
         return Patient.objects.count()
     except OperationalError as e:
@@ -19,7 +20,8 @@ def get_patient_count():
         return 0
 
 
-def get_doctor_count():
+def get_doctor_count() -> int:
+    """Return total number of doctors, or 0 if the database is unavailable."""
     try:
         return Doctor.objects.count()
     except OperationalError as e:
@@ -27,7 +29,8 @@ def get_doctor_count():
         return 0
 
 
-def get_appointment_count():
+def get_appointment_count() -> int:
+    """Return total number of appointments, or 0 if the database is unavailable."""
     try:
         return Appointment.objects.count()
     except OperationalError as e:
