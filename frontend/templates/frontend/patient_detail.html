@@ -1,0 +1,108 @@
+{% extends "frontend/base.html" %}
+{% block title %} — {{ patient.first_name }} {{ patient.last_name }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">{{ patient.first_name }} {{ patient.last_name }}</h1>
+    <a href="{% url 'patient_list' %}" class="btn btn-outline-secondary btn-sm">&larr; Back</a>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><h5 class="card-title mb-0">Personal Information</h5></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Email</dt>
+                    <dd class="col-sm-8">{{ patient.email }}</dd>
+                    <dt class="col-sm-4">Contact</dt>
+                    <dd class="col-sm-8">{{ patient.contact_number }}</dd>
+                    <dt class="col-sm-4">Date of Birth</dt>
+                    <dd class="col-sm-8">{{ patient.date_of_birth }}</dd>
+                    <dt class="col-sm-4">Address</dt>
+                    <dd class="col-sm-8">{{ patient.address|linebreaksbr }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><h5 class="card-title mb-0">Medical History</h5></div>
+            <div class="card-body">
+                {% if patient.medical_history %}
+                    <p class="mb-0">{{ patient.medical_history|linebreaksbr }}</p>
+                {% else %}
+                    <p class="text-body-secondary mb-0">No medical history recorded.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-2">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><h5 class="card-title mb-0">Insurance</h5></div>
+            <div class="card-body">
+                {% if patient.insurances.all %}
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>Provider</th><th>Policy</th><th>Expires</th></tr></thead>
+                    <tbody>
+                        {% for ins in patient.insurances.all %}
+                        <tr><td>{{ ins.provider }}</td><td>{{ ins.policy_number }}</td><td>{{ ins.expiration_date }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-body-secondary mb-0">No insurance on file.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><h5 class="card-title mb-0">Medical Records</h5></div>
+            <div class="card-body">
+                {% if patient.medical_records.all %}
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>Date</th><th>Diagnosis</th></tr></thead>
+                    <tbody>
+                        {% for rec in patient.medical_records.all %}
+                        <tr><td>{{ rec.date }}</td><td>{{ rec.diagnosis|truncatewords:20 }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-body-secondary mb-0">No medical records.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-2">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><h5 class="card-title mb-0">Appointments</h5></div>
+            <div class="card-body">
+                {% if patient.appointments.all %}
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>Date</th><th>Time</th><th>Doctor</th><th>Status</th></tr></thead>
+                    <tbody>
+                        {% for apt in patient.appointments.all %}
+                        <tr>
+                            <td>{{ apt.appointment_date }}</td>
+                            <td>{{ apt.appointment_time|default:"—" }}</td>
+                            <td>{{ apt.doctor.first_name }} {{ apt.doctor.last_name }}</td>
+                            <td><span class="badge bg-{% if apt.status == 'completed' %}success{% elif apt.status == 'cancelled' %}danger{% elif apt.status == 'confirmed' %}info{% else %}secondary{% endif %}">{{ apt.status }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-body-secondary mb-0">No appointments.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
