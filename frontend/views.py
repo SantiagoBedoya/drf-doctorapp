@@ -1,7 +1,24 @@
+from django.db import OperationalError
 from django.views.generic import ListView, DetailView, TemplateView
-from patients.models import Patient
-from doctors.models import Doctor
+
 from bookings.models import Appointment
+from doctors.models import Doctor
+from patients.models import Patient
+
+
+def _get_dashboard_counts():
+    try:
+        return {
+            "patient_count": Patient.objects.count(),
+            "doctor_count": Doctor.objects.count(),
+            "appointment_count": Appointment.objects.count(),
+        }
+    except OperationalError:
+        return {
+            "patient_count": 0,
+            "doctor_count": 0,
+            "appointment_count": 0,
+        }
 
 
 class IndexView(TemplateView):
@@ -9,9 +26,7 @@ class IndexView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["patient_count"] = Patient.objects.count()
-        context["doctor_count"] = Doctor.objects.count()
-        context["appointment_count"] = Appointment.objects.count()
+        context.update(_get_dashboard_counts())
         return context
 
 
