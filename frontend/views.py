@@ -22,6 +22,7 @@ def _get_dashboard_counts():
 
 
 class IndexView(TemplateView):
+    """Dashboard showing summary counts of patients, doctors, and appointments."""
     template_name = "frontend/index.html"
 
     def get_context_data(self, **kwargs):
@@ -31,6 +32,7 @@ class IndexView(TemplateView):
 
 
 class PatientListView(ListView):
+    """Paginated list of all patients."""
     model = Patient
     template_name = "frontend/patient_list.html"
     context_object_name = "patients"
@@ -38,12 +40,14 @@ class PatientListView(ListView):
 
 
 class PatientDetailView(DetailView):
+    """Detail view for a single patient, including insurance, records, and appointments."""
     model = Patient
     template_name = "frontend/patient_detail.html"
     context_object_name = "patient"
 
 
 class DoctorListView(ListView):
+    """Paginated list of all doctors."""
     model = Doctor
     template_name = "frontend/doctor_list.html"
     context_object_name = "doctors"
@@ -51,12 +55,14 @@ class DoctorListView(ListView):
 
 
 class DoctorDetailView(DetailView):
+    """Detail view for a single doctor, including availability, reviews, and appointments."""
     model = Doctor
     template_name = "frontend/doctor_detail.html"
     context_object_name = "doctor"
 
 
 class AppointmentListView(ListView):
+    """Paginated list of all appointments, newest first."""
     model = Appointment
     template_name = "frontend/appointment_list.html"
     context_object_name = "appointments"
@@ -65,6 +71,7 @@ class AppointmentListView(ListView):
 
 
 class AppointmentDetailView(DetailView):
+    """Detail view for a single appointment, including medical notes."""
     model = Appointment
     template_name = "frontend/appointment_detail.html"
     context_object_name = "appointment"

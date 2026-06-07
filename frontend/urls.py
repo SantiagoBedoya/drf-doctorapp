@@ -1,3 +1,7 @@
+"""
+URL configuration for the frontend web GUI.
+Provides browseable pages for patients, doctors, and appointments.
+"""
 from django.urls import path
 from . import views
 
