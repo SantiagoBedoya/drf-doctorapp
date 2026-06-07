@@ -1,3 +1,7 @@
+"""
+Consolidates all REST API URL routes into a single include.
+Groups patient, doctor, booking, and prescription endpoints under /api/.
+"""
 from django.urls import path, include
 
 urlpatterns = [

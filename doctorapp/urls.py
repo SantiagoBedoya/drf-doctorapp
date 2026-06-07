@@ -1,17 +1,13 @@
-"""
-URL configuration for the doctor appointment management system.
-Routes the web GUI, API endpoints, admin interface, and API docs.
-"""
 from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls')),
-    # Root path: web GUI (dashboard, patient/doctor/appointment views)
+    # Web GUI at root (dashboard, patients, doctors, appointments)
     path('', include('frontend.urls')),
-    # Root path: docs app uses absolute paths (api/schema/...)
+    # API docs at api/schema/* (paths are absolute within docs.urls)
     path('', include('docs.urls')),
-    # API routes: grouped via doctorapp/api_urls.py
+    # REST API at api/* (patients, doctors, bookings, prescriptions)
     path('', include('doctorapp.api_urls')),
 ]
