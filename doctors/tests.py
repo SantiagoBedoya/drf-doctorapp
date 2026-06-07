@@ -1,4 +1,4 @@
-from datetime import date, time
+from datetime import date, time, timedelta
 from django.contrib.auth.models import User, Group
 from django.test import TestCase
 from rest_framework import status
@@ -555,11 +555,14 @@ class DoctorViewSetCustomActionsTest(BaseAuthTestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 0)
 
+    def _future_date(self):
+        return (date.today() + timedelta(days=10)).isoformat()
+
     def test_create_appointment(self):
         self.client.force_authenticate(user=self.doctor_user)
         data = {
             "patient": self.patient.id,
-            "appointment_date": "2025-07-01",
+            "appointment_date": self._future_date(),
             "appointment_time": "10:00:00",
             "notes": "Regular checkup",
             "status": "scheduled",
@@ -577,7 +580,7 @@ class DoctorViewSetCustomActionsTest(BaseAuthTestCase):
     def test_create_appointment_without_patient_returns_400(self):
         self.client.force_authenticate(user=self.doctor_user)
         data = {
-            "appointment_date": "2025-07-01",
+            "appointment_date": self._future_date(),
             "notes": "No patient specified",
             "status": "scheduled",
         }
@@ -591,7 +594,7 @@ class DoctorViewSetCustomActionsTest(BaseAuthTestCase):
     def test_create_appointment_unauthenticated_returns_403(self):
         data = {
             "patient": self.patient.id,
-            "appointment_date": "2025-07-01",
+            "appointment_date": self._future_date(),
             "notes": "Regular checkup",
             "status": "scheduled",
         }
@@ -610,7 +613,7 @@ class DoctorViewSetCustomActionsTest(BaseAuthTestCase):
         self.client.force_authenticate(user=other_user)
         data = {
             "patient": self.patient.id,
-            "appointment_date": "2025-07-01",
+            "appointment_date": self._future_date(),
             "appointment_time": "10:00:00",
             "notes": "Regular checkup",
             "status": "scheduled",
