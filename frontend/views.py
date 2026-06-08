@@ -6,6 +6,7 @@ from django.views.generic import ListView, DetailView, TemplateView
 
 from bookings.models import Appointment
 from doctors.models import Doctor
+from notifications.models import Notification
 from patients.models import Patient
 
 logger = logging.getLogger(__name__)
@@ -47,6 +48,9 @@ class IndexView(LoginRequiredMixin, TemplateView):
         context["patient_count"] = get_patient_count()
         context["doctor_count"] = get_doctor_count()
         context["appointment_count"] = get_appointment_count()
+        context["unread_notifications"] = Notification.objects.filter(
+            recipient=self.request.user, is_read=False
+        ).count()
         return context
 
 
@@ -94,3 +98,14 @@ class AppointmentDetailView(LoginRequiredMixin, DetailView):
     model = Appointment
     template_name = "frontend/appointment_detail.html"
     context_object_name = "appointment"
+
+
+class NotificationListView(LoginRequiredMixin, ListView):
+    """Paginated list of notifications for the current user."""
+    model = Notification
+    template_name = "frontend/notification_list.html"
+    context_object_name = "notifications"
+    paginate_by = 20
+
+    def get_queryset(self):
+        return Notification.objects.filter(recipient=self.request.user)

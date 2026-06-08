@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'frontend',  # Bootstrap 5 web GUI for browsing patients, doctors, and appointments
     'docs',
     'drf_spectacular',
+    'notifications',
 ]
 
 MIDDLEWARE = [
@@ -74,6 +75,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'frontend.context_processors.unread_notifications',
             ],
         },
     },
