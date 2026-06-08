@@ -1,0 +1,66 @@
+{% extends "frontend/base.html" %}
+{% block title %} — Appointment #{{ appointment.pk }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Appointment #{{ appointment.pk }}</h1>
+    <a href="{% url 'appointment_list' %}" class="btn btn-outline-secondary btn-sm">&larr; Back</a>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><h5 class="card-title mb-0">Details</h5></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Date</dt>
+                    <dd class="col-sm-8">{{ appointment.appointment_date }}</dd>
+                    <dt class="col-sm-4">Time</dt>
+                    <dd class="col-sm-8">{{ appointment.appointment_time|default:"—" }}</dd>
+                    <dt class="col-sm-4">Status</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge bg-{% if appointment.status == 'completed' %}success{% elif appointment.status == 'cancelled' %}danger{% elif appointment.status == 'in_progress' %}primary{% elif appointment.status == 'confirmed' %}info{% else %}secondary{% endif %}">
+                            {{ appointment.get_status_display }}
+                        </span>
+                    </dd>
+                    <dt class="col-sm-4">Patient</dt>
+                    <dd class="col-sm-8"><a href="{% url 'patient_detail' appointment.patient.pk %}">{{ appointment.patient.first_name }} {{ appointment.patient.last_name }}</a></dd>
+                    <dt class="col-sm-4">Doctor</dt>
+                    <dd class="col-sm-8"><a href="{% url 'doctor_detail' appointment.doctor.pk %}">Dr. {{ appointment.doctor.first_name }} {{ appointment.doctor.last_name }}</a></dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><h5 class="card-title mb-0">Notes</h5></div>
+            <div class="card-body">
+                {% if appointment.notes %}
+                    <p class="mb-0">{{ appointment.notes|linebreaksbr }}</p>
+                {% else %}
+                    <p class="text-body-secondary mb-0">No notes for this appointment.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-2">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><h5 class="card-title mb-0">Medical Notes</h5></div>
+            <div class="card-body">
+                {% if appointment.medical_notes.all %}
+                {% for note in appointment.medical_notes.all %}
+                <div class="mb-2 pb-2 border-bottom border-secondary">
+                    <small class="text-body-secondary">{{ note.date }}</small>
+                    <p class="mb-0 mt-1">{{ note.note|linebreaksbr }}</p>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p class="text-body-secondary mb-0">No medical notes recorded.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -24,13 +24,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv(
-    'DJANGO_SECRET_KEY',
-    'django-insecure-+p7oe=2p#3-j9lpea(=^7yx(!_p)2e##vnn93to@aw8wflu#!v',
-)
+SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DJANGO_DEBUG', 'True').lower() in ('true', '1', 'yes')
+DEBUG = os.getenv('DJANGO_DEBUG', 'False').lower() in ('true', '1', 'yes')
 
 ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', '').split(',') if os.getenv('DJANGO_ALLOWED_HOSTS') else []
 
@@ -50,6 +47,7 @@ INSTALLED_APPS = [
     'doctors',
     'bookings',
     'prescriptions',
+    'frontend',  # Bootstrap 5 web GUI for browsing patients, doctors, and appointments
     'docs',
     'drf_spectacular',
 ]
@@ -130,6 +128,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# Authentication URLs for the LoginRequiredMixin used in frontend views
+LOGIN_URL = '/api-auth/login/'       # DRF login view
+LOGIN_REDIRECT_URL = '/'              # Where to go after successful login
+LOGOUT_REDIRECT_URL = '/'             # Where to go after logout
 
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',

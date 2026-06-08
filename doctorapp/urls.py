@@ -1,18 +1,6 @@
 """
-URL configuration for doctorapp project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/6.0/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+Root URL configuration for the doctor appointment management system.
+Routes requests to the web GUI, REST API, admin interface, and API docs.
 """
 from django.contrib import admin
 from django.urls import path, include
@@ -20,9 +8,10 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls')),
+    # Web GUI at root (dashboard, patients, doctors, appointments)
+    path('', include('frontend.urls')),
+    # API docs at api/schema/* (docs.urls uses hardcoded absolute paths)
     path('', include('docs.urls')),
-    path('api/', include('patients.urls')),
-    path('api/', include('doctors.urls')),
-    path('api/', include('bookings.urls')),
-    path('api/', include('prescriptions.urls')),
+    # REST API at api/* (patients, doctors, bookings, prescriptions)
+    path('', include('doctorapp.api_urls')),
 ]
