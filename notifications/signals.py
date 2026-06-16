@@ -5,7 +5,14 @@ from bookings.models import Appointment, AppointmentStatus
 from notifications.models import Notification, NotificationType
 
 
-def _create_notification(recipient, notification_type, title, message, appointment):
+def _create_notification(
+    recipient,
+    notification_type: str,
+    title: str,
+    message: str,
+    appointment,
+) -> None:
+    """Create a notification for the given recipient with the provided details."""
     Notification.objects.create(
         recipient=recipient,
         notification_type=notification_type,
@@ -17,10 +24,12 @@ def _create_notification(recipient, notification_type, title, message, appointme
 
 @receiver(post_save, sender=Appointment)
 def appointment_notification(sender, instance, created, **kwargs):
+    """Send notifications to patient and doctor when an appointment is created or its status changes."""
     patient_user = instance.patient.user if hasattr(instance.patient, 'user') else None
     doctor_user = instance.doctor.user if instance.doctor.user else None
 
     if created:
+        # New appointment: notify both parties that it has been scheduled
         if patient_user:
             _create_notification(
                 recipient=patient_user,
@@ -38,6 +47,7 @@ def appointment_notification(sender, instance, created, **kwargs):
                 appointment=instance,
             )
     else:
+        # Existing appointment updated: map status changes to notification types
         status_map = {
             AppointmentStatus.CONFIRMED: (
                 NotificationType.APPOINTMENT_CONFIRMED,

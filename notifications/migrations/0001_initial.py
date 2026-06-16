@@ -19,6 +19,9 @@ class Migration(migrations.Migration):
             name='Notification',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                # notification_type choices: appointment_scheduled, appointment_confirmed,
+                # appointment_completed, appointment_cancelled, appointment_no_show,
+                # appointment_reminder
                 ('notification_type', models.CharField(choices=[('appointment_scheduled', 'Appointment Scheduled'), ('appointment_confirmed', 'Appointment Confirmed'), ('appointment_completed', 'Appointment Completed'), ('appointment_cancelled', 'Appointment Cancelled'), ('appointment_no_show', 'Appointment No Show'), ('appointment_reminder', 'Appointment Reminder')], max_length=30)),
                 ('title', models.CharField(max_length=200)),
                 ('message', models.TextField()),

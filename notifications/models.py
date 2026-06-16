@@ -30,6 +30,7 @@ class Notification(models.Model):
         null=True,
         blank=True,
         related_name='notifications',
+        help_text="The appointment this notification relates to, if any.",
     )
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -38,4 +39,5 @@ class Notification(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
+        """Return a string representation showing the notification type and title."""
         return f"[{self.notification_type}] {self.title}"

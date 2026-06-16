@@ -3,6 +3,7 @@ from notifications.models import Notification
 
 
 class NotificationSerializer(serializers.ModelSerializer):
+    """Serializer for the Notification model, allowing updates only to read status."""
     class Meta:
         model = Notification
         fields = '__all__'
