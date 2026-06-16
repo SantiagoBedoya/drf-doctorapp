@@ -1,3 +1,8 @@
+"""
+Frontend views for the doctor appointment management system.
+Provides the dashboard, patient/doctor/appointment list and detail views.
+"""
+
 import logging
 
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -6,35 +11,18 @@ from django.views.generic import ListView, DetailView, TemplateView
 
 from bookings.models import Appointment
 from doctors.models import Doctor
+from notifications.models import Notification
 from patients.models import Patient
 
 logger = logging.getLogger(__name__)
 
 
-def get_patient_count() -> int:
-    """Return total number of patients, or 0 if the database is unavailable."""
+def _safe_count(model, label: str) -> int:
+    """Return count of model objects, or 0 if the database is unavailable."""
     try:
-        return Patient.objects.count()
+        return model.objects.count()
     except OperationalError as e:
-        logger.warning("Could not count patients: %s", e)
-        return 0
-
-
-def get_doctor_count() -> int:
-    """Return total number of doctors, or 0 if the database is unavailable."""
-    try:
-        return Doctor.objects.count()
-    except OperationalError as e:
-        logger.warning("Could not count doctors: %s", e)
-        return 0
-
-
-def get_appointment_count() -> int:
-    """Return total number of appointments, or 0 if the database is unavailable."""
-    try:
-        return Appointment.objects.count()
-    except OperationalError as e:
-        logger.warning("Could not count appointments: %s", e)
+        logger.warning("Could not count %s: %s", label, e)
         return 0
 
 
@@ -44,10 +32,17 @@ class IndexView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["patient_count"] = get_patient_count()
-        context["doctor_count"] = get_doctor_count()
-        context["appointment_count"] = get_appointment_count()
+        context["patient_count"] = _safe_count(Patient, "patients")
+        context["doctor_count"] = _safe_count(Doctor, "doctors")
+        context["appointment_count"] = _safe_count(Appointment, "appointments")
+        context["unread_notifications"] = self._get_unread_notification_count()
         return context
+
+    def _get_unread_notification_count(self) -> int:
+        """Return the count of unread notifications for the current user."""
+        return Notification.objects.filter(
+            recipient=self.request.user, is_read=False
+        ).count()
 
 
 class PatientListView(LoginRequiredMixin, ListView):
@@ -94,3 +89,14 @@ class AppointmentDetailView(LoginRequiredMixin, DetailView):
     model = Appointment
     template_name = "frontend/appointment_detail.html"
     context_object_name = "appointment"
+
+
+class NotificationListView(LoginRequiredMixin, ListView):
+    """Paginated list of notifications for the current user."""
+    model = Notification
+    template_name = "frontend/notification_list.html"
+    context_object_name = "notifications"
+    paginate_by = 20
+
+    def get_queryset(self):
+        return Notification.objects.filter(recipient=self.request.user)

@@ -20,6 +20,7 @@
                     <li class="nav-item"><a class="nav-link" href="{% url 'appointment_list' %}">Appointments</a></li>
                 </ul>
                 <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'notification_list' %}">Notifications{% if unread_notifications %} <span class="badge bg-danger rounded-pill">{{ unread_notifications }}</span>{% endif %}</a></li>
                     <li class="nav-item"><a class="nav-link" href="/admin/">Admin</a></li>
                     <li class="nav-item"><a class="nav-link" href="/api/schema/swagger-ui/">API</a></li>
                 </ul>
